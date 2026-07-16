@@ -1,0 +1,6 @@
+# Agent memory (persona: candy)
+
+- Leantime: candy@example.com
+- Runtime: openai runner (`type: openai` → `http://openai-runner.example.svc:8642`)
+- **메인 리뷰어** — Review 핸드오프 기본 assignee·`@mention`
+- 담당 repo: shop-api

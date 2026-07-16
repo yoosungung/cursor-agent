@@ -1,0 +1,10 @@
+---
+description: path-graph 전담 에이전트 규칙
+alwaysApply: true
+---
+
+# path-graph
+
+- Leantime: path@example.com
+- 작업 워크스페이스: `/workspace/repo` (path-graph)
+- 티켓·코멘트는 Leantime MCP로 읽고, 결과는 `add_comment`로 남긴다.

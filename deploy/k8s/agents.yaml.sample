@@ -1,0 +1,72 @@
+# Copy to agents.yaml and fill with real identities (gitignored).
+#   cp deploy/k8s/agents.yaml.sample deploy/k8s/agents.yaml
+# Then: ./deploy/k8s/scripts/render-agents.sh && python deploy/k8s/scripts/sync-bridge-json.py
+
+agents:
+  - name: eric
+    leantime_user_id: 1
+    email: eric@example.com
+    persona: eric
+    git_repo_url: https://github.com/demo-org/bridge-harness.git
+    type: human
+
+  - name: candy
+    leantime_user_id: 4
+    email: candy@example.com
+    persona: candy
+    git_repo_url: https://github.com/demo-org/shop-api.git
+    type: openai
+    runner_url: http://openai-runner.example.svc:8642
+
+  - name: asky
+    leantime_user_id: 5
+    email: asky@example.com
+    persona: asky
+    git_repo_url: https://github.com/demo-org/landing-web.git
+    type: sessions
+
+  - name: path
+    leantime_user_id: 6
+    email: path@example.com
+    persona: path
+    git_repo_url: https://github.com/demo-org/topology-lib.git
+    type: sessions
+
+settings:
+  debounce_ms: 3000
+  mention_routing: true
+  replicas_max: 10
+  runner_image: ghcr.io/example/agent-runner:latest
+  model: auto
+  budget:
+    timeout_ms: 600000
+  success_retry:
+    max_attempts: 3
+  success_checks:
+    - "Read Active ticket via Leantime MCP before writing."
+    - "Leave an add_comment outcome on the Active ticket."
+    - "If Review-ready: git-ship (push + PR) before handoff."
+  schedules:
+    - id: candy-pm-checkpoint
+      cron: "5,20,35,50 * * * *"
+      agents: [candy]
+      prompt: >-
+        leantime-pm: 30분 체크포인트 감시. In Progress 개발 티켓/서브태스크만.
+        Done·Archived·Waiting for Approval는 스킵(새 개발 요청 코멘트 없으면).
+        최근 30분 내 PM 체크포인트 코멘트가 있으면 중복 금지.
+        마지막 actionable 코멘트가 30분 넘고 PR/테스트/완료/blocker 증거가 없으면
+        체크포인트 요청 코멘트 1건(시도·원인·branch/PR·다음 최소 단계).
+        원인은 하나만: (1) 과대/모호→서브태스크 분할 (2) 실패/차단→해제·재배정·Blocked·에스컬
+        (3) 단순 중단→재개+다음 30분 증거 요청.
+        멘션은 알려진 id만(eric=1,candy=4,asky=5,path=6).
+        코드/메일/장문 금지. 실행당 코멘트 ≤5. 끝나면 조치·분류·스킵 사유만 짧게.
+      success_checks:
+        - "At most 5 checkpoint comments added this run."
+        - "No duplicate PM checkpoint within 30 minutes on the same ticket."
+        - "Final reply lists acted/skipped tickets with classification."
+    - id: github-issue-check
+      cron: "0 23 * * *"
+      prompt: "github issue 점검하여 신규는 티켓으로 변환하고, 블로커가 있으면 add_comment 처리."
+      success_checks:
+        - "New GitHub issues are reflected as Leantime tickets or explicitly skipped with a comment."
+        - "Blockers are reported via add_comment."
