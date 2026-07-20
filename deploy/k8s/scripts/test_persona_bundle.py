@@ -85,9 +85,17 @@ def test_build_candy_bundle_includes_leantime_pm_skill():
     assert "candy is the **PM**" in skill or "candy` is the **PM**" in skill or "candy is the PM" in skill.lower()
     assert "Use when acting as a Leantime project manager" in skill
     assert "30-Minute Developer Work Timebox" in skill
+    # Progressive disclosure: keep SKILL.md lean; heavy playbooks in references/.
+    assert len(skill.splitlines()) < 200
+    assert "## PM Workflow" not in skill
+    assert "references/pm-workflow.md" in skill
     refs = [
         ".cursor/skills/leantime-pm/references/checkpoint-jsonrpc-status-probe.md",
         ".cursor/skills/leantime-pm/references/checkpoint-sql-status-probe.md",
+        ".cursor/skills/leantime-pm/references/ticket-ops.md",
+        ".cursor/skills/leantime-pm/references/pm-workflow.md",
+        ".cursor/skills/leantime-pm/references/mention-watcher-review.md",
+        ".cursor/skills/leantime-pm/references/pitfalls.md",
         ".cursor/skills/leantime-pm/references/path-graph-native-blocks-pm-review.md",
         ".cursor/skills/leantime-pm/references/path-graph-graphrag-closeout.md",
         ".cursor/skills/leantime-pm/references/path-graph-graphrag-runtime-closeout.md",
