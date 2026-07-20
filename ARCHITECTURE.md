@@ -22,7 +22,7 @@ Leantime × Cursor Agent 협업 시스템 계약 및 인터페이스.
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| `agents[]` | array | ≤10; `name`, `leantime_user_id`, `email`, `runner_url`, `git_repo_url`, `persona`, `type`(`human`\|`sessions`\|`openai`). `human`: Pod 없음·`runner_url` 빈 문자열. `sessions`: Pod/Service `cursor-agent-{name}`, sync가 runner_url 생성, `model`(선택). `openai`: YAML `runner_url` 필수(외부 OpenAI-compatible), StatefulSet 없음 |
+| `agents[]` | array | ≤10; `name`, `leantime_user_id`, `email`, `runner_url`, `git_repo_url`, `persona`, `type`(`human`\|`sessions`\|`openai`). `human`: Pod 없음·`runner_url` 빈 문자열. `sessions`: Pod/Service `cursor-agent-{name}`, sync가 runner_url 생성, `model`(선택), `gh_token_secret_key`(선택, 기본 `GH_TOKEN`). `openai`: YAML `runner_url` 필수(외부 OpenAI-compatible), StatefulSet 없음 |
 | `model` | string | 기본 모델 (`agents.yaml` `settings.model`에서 sync; `sessions`별 override는 `agents[].model`) |
 | `debounce_ms` | int | 동일 티켓 이벤트 디바운스 |
 | `prompts` | object | `ticket_created`, `ticket_updated`, `comment_added`, `assignee_changed`, `mention` (`{ticket_id}`), `handoff`. Router가 매 이벤트에 `Active ticket_id=N` 스코프 문장을 붙여 MCP 읽기/쓰기를 그 티켓으로 고정한다. |
@@ -128,6 +128,6 @@ K8s CronJob `cursorbridge-schedule-tick`(* * * * *, UTC)이 Leantime Pod에서 `
 
 - 전 runner가 동일 `CURSOR_API_KEY` 공유 (Secret `cursor-api-key`, 사용량 합산).
 - Leantime MCP는 포크 `leantime-mcp/`(agent-runner 이미지). agent별 **`LEANTIME_ACCESS_TOKEN`**(해당 Leantime 사용자 PAT, Secret `LEANTIME_ACCESS_TOKEN_{name}`)으로 Bearer 인증한다. Leantime 3.9+ PAT는 댓글·쓰기 작성자가 해당 사용자로 표시된다.
-- agent-runner 이미지는 **Python 3.12 + uv**, **kubectl**, **gh**, **git**을 포함한다. K8s Pod는 ServiceAccount `cursor-agent`로 동일 namespace Pod/로그 읽기. **봇 runner**는 Secret `cursor-api-key`의 **`GH_TOKEN`(GitHub PAT, repo write)** 필수 — 시작 시 `gh auth login`·`git` credential 설정. GHCR pull은 별도 `ghcr-pull` Secret.
+- agent-runner 이미지는 **Python 3.12 + uv**, **kubectl**, **gh**, **git**을 포함한다. K8s Pod는 ServiceAccount `cursor-agent`로 동일 namespace Pod/로그 읽기. **봇 runner**는 Secret `cursor-api-key`의 **`GH_TOKEN`(공유 GitHub PAT, repo write)** 필수 — 시작 시 `gh auth setup-git`. agent별 override는 선택 키 **`GH_TOKEN_{name}`** → env `GH_TOKEN_OVERRIDE`(있으면 `GH_TOKEN`을 대체). GHCR pull은 별도 `ghcr-pull` Secret.
 - SDK run은 IDE와 동일 usage pool을 사용한다.
 - M0에서 티켓당 토큰을 측정한 뒤 10 agent 확장 여부를 결정한다.

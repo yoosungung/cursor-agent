@@ -24,7 +24,7 @@ python deploy/k8s/scripts/sync-bridge-json.py
 | `sessions` | `cursor-agent-{name}` StatefulSet/Service | sync가 DNS 생성; `model`(선택) → `AGENT_RUNNER_MODEL` |
 | `openai` | 없음 | YAML 필수 (예: `http://openai-runner.example.svc:8642`) |
 
-`sessions` 생략 시 `settings.model`(기본 `composer-2.5`). `openai` 호출은 Leantime Pod env **`CURSORBRIDGE_OPENAI_API_KEY`**(Hermes `API_SERVER_KEY`) Bearer가 필요하다. `leantime` → `ai-agents` DNS/NetworkPolicy가 열려 있어야 한다.
+`sessions` 생략 시 `settings.model`(기본 `composer-2.5`). **남은** `type: openai` agent가 있을 때만 Leantime Pod env **`CURSORBRIDGE_OPENAI_API_KEY`**(외부 OpenAI-compatible `API_SERVER_KEY`, 예: Hermes) Bearer가 필요하다. candy는 `sessions`(`cursor-agent-candy`)다.
 
 ## 2. 렌더 및 bridge 동기화
 
@@ -44,8 +44,9 @@ python deploy/k8s/scripts/sync-bridge-json.py
 |----|------|
 | `CURSOR_API_KEY` | `@cursor/sdk` |
 | `LEANTIME_ACCESS_TOKEN_{name}` | agent별 Leantime PAT (`path` → `LEANTIME_ACCESS_TOKEN_path`). Profile → Personal Access Tokens에서 발급 |
-| `GH_TOKEN` | **봇 runner 필수** — GitHub PAT (`repo` 또는 대상 repo write). Pod 시작 시 `gh auth login`·`git push`·`gh pr create`용. GHCR pull은 `ghcr-pull` Secret 별도 |
-| `CURSORBRIDGE_OPENAI_API_KEY` | `type: openai` (candy/Hermes) Bearer — Hermes `API_SERVER_KEY`와 동일. **Leantime Deployment** env로도 주입 |
+| `GH_TOKEN` | **봇 runner 필수(공유 기본값)** — GitHub PAT (`repo` 또는 대상 repo write). Pod 시작 시 `gh auth setup-git`·`git push`·`gh pr create`용. GHCR pull은 `ghcr-pull` Secret 별도 |
+| `GH_TOKEN_{name}` | **선택** — agent별 GitHub PAT override (`candy` → `GH_TOKEN_candy`). 있으면 해당 Pod만 공유 `GH_TOKEN` 대신 사용 |
+| `CURSORBRIDGE_OPENAI_API_KEY` | `type: openai` runner용 Bearer(외부 OpenAI-compatible). **남은 openai agent가 있을 때만** Leantime Deployment env로 주입 |
 
 `openai` runner용 키 등록 예:
 
@@ -62,6 +63,14 @@ PAT 등록 예:
 kubectl -n leantime patch secret cursor-api-key --type merge \
   -p '{"stringData":{"LEANTIME_ACCESS_TOKEN_path":"<PAT>"}}'
 kubectl -n leantime rollout restart statefulset/cursor-agent-path
+```
+
+agent별 GitHub 토큰 예 (candy = Hermes/`berryking404` PAT):
+
+```bash
+kubectl -n leantime patch secret cursor-api-key --type merge \
+  -p '{"stringData":{"GH_TOKEN_candy":"<PAT>"}}'
+kubectl -n leantime rollout restart statefulset/cursor-agent-candy
 ```
 
 agent identity는 `agents.yaml` `email` / `bridge.json`이 담당. Leantime MCP 인증은 Pod `LEANTIME_ACCESS_TOKEN` → persona `mcp.json`만 사용.

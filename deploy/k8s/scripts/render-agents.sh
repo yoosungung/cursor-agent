@@ -56,6 +56,9 @@ for agent in deploy_agents:
     email = agent["email"]
     git_repo = agent.get("git_repo_url", "")
 
+    # Default shared Secret key; per-agent override e.g. candy → GH_TOKEN_candy.
+    gh_token_secret_key = str(agent.get("gh_token_secret_key") or "GH_TOKEN").strip() or "GH_TOKEN"
+
     ss = (
         ss_tpl.replace("{{NAME}}", name)
         .replace("{{PERSONA}}", persona)
@@ -63,6 +66,7 @@ for agent in deploy_agents:
         .replace("{{GIT_REPO}}", git_repo)
         .replace("{{RUNNER_IMAGE}}", runner_image)
         .replace("{{MODEL}}", agent_model(agent))
+        .replace("{{GH_TOKEN_SECRET_KEY}}", gh_token_secret_key)
     )
     ss_path = out / f"statefulset-{name}.yaml"
     ss_path.write_text(ss)

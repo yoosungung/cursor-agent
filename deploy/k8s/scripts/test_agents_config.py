@@ -123,6 +123,31 @@ settings: {}
     assert "model" not in agent
 
 
+def test_statefulset_template_honors_gh_token_secret_key():
+    """agents[].gh_token_secret_key → Secret key for env GH_TOKEN (candy override)."""
+    root = SCRIPTS.parents[2]
+    ss_tpl = (root / "deploy/k8s/templates/statefulset.yaml.tpl").read_text()
+    assert "{{GH_TOKEN_SECRET_KEY}}" in ss_tpl
+
+    def render(name: str, gh_key: str) -> str:
+        return (
+            ss_tpl.replace("{{NAME}}", name)
+            .replace("{{PERSONA}}", name)
+            .replace("{{EMAIL}}", f"{name}@example.com")
+            .replace("{{GIT_REPO}}", "")
+            .replace("{{RUNNER_IMAGE}}", "example/runner:test")
+            .replace("{{MODEL}}", "auto")
+            .replace("{{GH_TOKEN_SECRET_KEY}}", gh_key)
+        )
+
+    candy = render("candy", "GH_TOKEN_candy")
+    path = render("path", "GH_TOKEN")
+    assert "key: GH_TOKEN_candy" in candy
+    assert "key: GH_TOKEN_path" in path  # optional override slot
+    assert "                  key: GH_TOKEN\n" in path or "                  key: GH_TOKEN\r\n" in path
+    assert "GH_TOKEN_candy" not in path
+
+
 def test_bridge_sync_includes_schedules(tmp_path, monkeypatch):
     mod = _load_sync_module()
     agents_yaml = tmp_path / "agents.yaml"

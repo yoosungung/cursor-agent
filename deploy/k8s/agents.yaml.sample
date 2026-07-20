@@ -15,8 +15,9 @@ agents:
     email: candy@example.com
     persona: candy
     git_repo_url: https://github.com/demo-org/shop-api.git
-    type: openai
-    runner_url: http://openai-runner.example.svc:8642
+    type: sessions
+    # Optional: Secret cursor-api-key key (default GH_TOKEN). Hermes-era candy → GH_TOKEN_candy.
+    gh_token_secret_key: GH_TOKEN_candy
 
   - name: asky
     leantime_user_id: 5
@@ -51,7 +52,7 @@ settings:
       cron: "5,20,35,50 * * * *"
       agents: [candy]
       prompt: >-
-        leantime-pm: 30분 체크포인트 감시. In Progress 개발 티켓/서브태스크만.
+        Use the leantime-pm skill. 30분 체크포인트 감시. In Progress 개발 티켓/서브태스크만.
         Done·Archived·Waiting for Approval는 스킵(새 개발 요청 코멘트 없으면).
         최근 30분 내 PM 체크포인트 코멘트가 있으면 중복 금지.
         마지막 actionable 코멘트가 30분 넘고 PR/테스트/완료/blocker 증거가 없으면

@@ -75,6 +75,32 @@ def test_build_bundle_includes_default_leantime_skill():
     assert "update_ticket" in skill
 
 
+def test_build_candy_bundle_includes_leantime_pm_skill():
+    bundle = build_persona_bundle("candy", PERSONAS_ROOT)
+    skill_key = ".cursor/skills/leantime-pm/SKILL.md"
+    assert skill_key in bundle
+    skill = bundle[skill_key]
+    assert "metadata:\n  hermes:" not in skill
+    assert "Hermes is the PM" not in skill
+    assert "candy is the **PM**" in skill or "candy` is the **PM**" in skill or "candy is the PM" in skill.lower()
+    assert "Use when acting as a Leantime project manager" in skill
+    assert "30-Minute Developer Work Timebox" in skill
+    refs = [
+        ".cursor/skills/leantime-pm/references/checkpoint-jsonrpc-status-probe.md",
+        ".cursor/skills/leantime-pm/references/checkpoint-sql-status-probe.md",
+        ".cursor/skills/leantime-pm/references/path-graph-native-blocks-pm-review.md",
+        ".cursor/skills/leantime-pm/references/path-graph-graphrag-closeout.md",
+        ".cursor/skills/leantime-pm/references/path-graph-graphrag-runtime-closeout.md",
+        ".cursor/skills/leantime-pm/references/path-graph-agent-bundle-post-merge.md",
+    ]
+    for key in refs:
+        assert key in bundle, key
+    jsonrpc = bundle[refs[0]]
+    assert "/opt/data/config.yaml" not in jsonrpc
+    assert "LEANTIME_URL" in jsonrpc
+    assert "LEANTIME_ACCESS_TOKEN" in jsonrpc
+
+
 def test_build_bundle_includes_git_ship_skill():
     bundle = build_persona_bundle("runtime", PERSONAS_ROOT)
     skill_key = ".cursor/skills/git-ship/SKILL.md"

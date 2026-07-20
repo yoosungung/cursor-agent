@@ -42,6 +42,7 @@ M0–M3 코드·K8s·이미지 배포 완료. **5 agent Pod Running**, bridge.js
 - [x] agent-runner SDK worker pool (auth 격리·pre-lease recycle·auth-stale retire)
 - [x] Goose A안(보수): docs + runner `budget`/`policy` preamble·로그, `success_checks`, context summary, tool-class/delegation prompt (`docs/goose/06-gap-with-cursor-agent.md`)
 - [x] Goose A안 Phase 2: `success_checks` hard 검증(SDK `status=finished` AND 마지막 Leantime mutation) + 같은 session 제한 재시도(`success_retry.max_attempts`) → `verification_failed` (`agent-runner/src/success-verify.ts`)
+- [x] candy Hermes(`openai`) → agent-runner(`sessions`) + persona `leantime-pm` 이식·컷오버
 
 ---
 
@@ -49,4 +50,5 @@ M0–M3 코드·K8s·이미지 배포 완료. **5 agent Pod Running**, bridge.js
 
 1. Leantime **My Apps → CursorBridge 활성화**
 2. 티켓 assignee=agent → 코멘트/상태 변경으로 E2E 검증
-3. `git commit` + `git push` (변경분 다수 unstaged)
+3. candy: `cursor-agent-candy` 배포 후 assignee/스케줄 E2E, Hermes `openai` 트래픽 제거 확인
+4. `git commit` + `git push` (변경분 다수 unstaged)

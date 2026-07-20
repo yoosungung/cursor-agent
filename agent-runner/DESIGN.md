@@ -28,7 +28,8 @@ npm run build && npm start
 | `AGENT_RUNNER_WORKER_MAX_AGE_MS` | `2700000` (45분) | lease 전 age 초과 시 worker 교체 |
 | `AGENT_RUNNER_WORKER_MAX_JOBS` | `50` | lease 전 job 수 초과 시 worker 교체 |
 | `KUBERNETES_NAMESPACE` | `leantime` | kubectl 기본 namespace (K8s Pod) |
-| `GH_TOKEN` | — | **봇 runner 필수** — GitHub PAT (repo write) |
+| `GH_TOKEN` | — | **봇 runner 필수** — GitHub PAT (repo write). Secret 기본 키 `GH_TOKEN` |
+| `GH_TOKEN_OVERRIDE` | — | 선택. Secret `GH_TOKEN_{name}`이 있으면 entrypoint가 `GH_TOKEN`을 이 값으로 대체 |
 
 Node.js **22.13+** 필요 (`@cursor/sdk` 요구사항).
 

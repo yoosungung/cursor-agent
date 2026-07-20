@@ -33,15 +33,29 @@ final class BridgeConfigTest extends TestCase
         $this->assertTrue($config->isAgentAccount(6));
         $this->assertTrue($config->isAgentAccount(4));
         $candy = $config->runnerForUserId(4);
-        $this->assertSame('openai', $config->agentType($candy));
+        $this->assertSame('sessions', $config->agentType($candy));
         $candyUrl = (string) ($candy['runner_url'] ?? '');
-        $this->assertNotSame('', $candyUrl);
+        $this->assertStringContainsString('cursor-agent-candy', $candyUrl);
         $this->assertStringContainsString('cursor-agent-path', (string) $agent['runner_url']);
         $this->assertFalse($config->isAgentAccount(1));
         $this->assertSame('', (string) ($config->runnerForUserId(1)['runner_url'] ?? ''));
         $this->assertSame('human', $config->agentType($config->runnerForUserId(1)));
-        $this->assertSame('openai', $config->typeForRunnerUrl($candyUrl));
+        $this->assertSame('sessions', $config->typeForRunnerUrl($candyUrl));
         $this->assertSame('sessions', $config->typeForRunnerUrl('http://cursor-agent-path.leantime.svc:8080'));
+        $openaiCfg = new BridgeConfig([
+            'agents' => [
+                [
+                    'name' => 'external-pm',
+                    'leantime_user_id' => 99,
+                    'runner_url' => 'http://hermes-master.ai-agents.svc:8642',
+                    'type' => 'openai',
+                ],
+            ],
+        ]);
+        $this->assertSame(
+            'openai',
+            $openaiCfg->typeForRunnerUrl('http://hermes-master.ai-agents.svc:8642')
+        );
     }
 
     public function testFormatsSuccessChecksPrompt(): void

@@ -58,7 +58,13 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: cursor-api-key
-                  key: GH_TOKEN
+                  key: {{GH_TOKEN_SECRET_KEY}}
+                  optional: true
+            - name: GH_TOKEN_OVERRIDE
+              valueFrom:
+                secretKeyRef:
+                  name: cursor-api-key
+                  key: GH_TOKEN_{{NAME}}
                   optional: true
           command:
             - sh
@@ -70,8 +76,9 @@ spec:
               fi
               if [ ! -d /workspace/repo/.git ]; then
                 CLONE_URL="$GIT_REPO_URL"
-                if [ -n "$GH_TOKEN" ]; then
-                  CLONE_URL=$(printf '%s' "$GIT_REPO_URL" | sed "s#https://#https://x-access-token:${GH_TOKEN}@#")
+                TOKEN="${GH_TOKEN_OVERRIDE:-$GH_TOKEN}"
+                if [ -n "$TOKEN" ]; then
+                  CLONE_URL=$(printf '%s' "$GIT_REPO_URL" | sed "s#https://#https://x-access-token:${TOKEN}@#")
                 fi
                 git clone --depth=1 "$CLONE_URL" /workspace/repo
               fi
@@ -105,7 +112,13 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: cursor-api-key
-                  key: GH_TOKEN
+                  key: {{GH_TOKEN_SECRET_KEY}}
+            - name: GH_TOKEN_OVERRIDE
+              valueFrom:
+                secretKeyRef:
+                  name: cursor-api-key
+                  key: GH_TOKEN_{{NAME}}
+                  optional: true
             - name: HOME
               value: /cursor-home
             - name: WORKSPACE

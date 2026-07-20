@@ -86,10 +86,25 @@ final class OpenAIRunnerClientTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function testDelegatingRoutesCandyToOpenAI(): void
+    public function testDelegatingRoutesOpenAITypeAgent(): void
     {
         $posts = [];
-        $config = BridgeConfig::fromFile(dirname(__DIR__) . '/bridge.json');
+        $config = new BridgeConfig([
+            'debounce_ms' => 0,
+            'prompts' => [
+                'ticket_created' => 'Process ticket',
+            ],
+            'agents' => [
+                [
+                    'name' => 'external-pm',
+                    'leantime_user_id' => 99,
+                    'email' => 'external@example.com',
+                    'runner_url' => 'http://hermes-master.ai-agents.svc:8642',
+                    'type' => 'openai',
+                    'persona' => 'external-pm',
+                ],
+            ],
+        ]);
         $sessions = new RunnerClient(
             function (string $url, array $body) use (&$posts): array {
                 $posts[] = ['dialect' => 'sessions', 'url' => $url, 'body' => $body];
@@ -115,10 +130,10 @@ final class OpenAIRunnerClientTest extends TestCase
 
         $results = $router->handle('ticket_created', [
             'ticketId' => 501,
-            'assigneeUserId' => 4,
-            'actorUserId' => 99,
+            'assigneeUserId' => 99,
+            'actorUserId' => 1,
             'status' => 3,
-            'headline' => 'Candy review',
+            'headline' => 'OpenAI dialect review',
         ]);
 
         $this->assertCount(1, $results);
