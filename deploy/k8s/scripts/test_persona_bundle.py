@@ -101,6 +101,16 @@ def test_build_candy_bundle_includes_leantime_pm_skill():
     assert "LEANTIME_ACCESS_TOKEN" in jsonrpc
 
 
+def test_persona_bundle_skips_sample_templates():
+    bundle = build_persona_bundle("candy", PERSONAS_ROOT)
+    assert "MEMORY.md.sample" not in bundle
+    assert not any(k.endswith(".sample") for k in bundle)
+    memory = bundle[".cursor/MEMORY.md"]
+    assert "봇 (sessions)" in memory
+    assert "hermes (openai)" not in memory
+    assert "leantime-pm" in memory
+
+
 def test_build_bundle_includes_git_ship_skill():
     bundle = build_persona_bundle("runtime", PERSONAS_ROOT)
     skill_key = ".cursor/skills/git-ship/SKILL.md"

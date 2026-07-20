@@ -84,14 +84,20 @@ def merge_mcp(base: dict, overlay: dict | None) -> dict:
 
 
 def collect_tree(directory: Path) -> dict[str, str]:
-    """Map relative posix paths to file contents under directory."""
+    """Map relative posix paths to file contents under directory.
+
+    Skip `*.sample` templates — they are repo bootstrap only, not Pod seeds.
+    """
     if not directory.is_dir():
         return {}
     files: dict[str, str] = {}
     for path in sorted(directory.rglob("*")):
-        if path.is_file():
-            rel = path.relative_to(directory).as_posix()
-            files[rel] = path.read_text()
+        if not path.is_file():
+            continue
+        if path.name.endswith(".sample"):
+            continue
+        rel = path.relative_to(directory).as_posix()
+        files[rel] = path.read_text()
     return files
 
 
