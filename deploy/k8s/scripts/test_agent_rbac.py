@@ -49,3 +49,34 @@ def test_operator_rbac_denies_self_escalation_writes():
     assert "clusterrolebindings" not in all_resources
     assert "roles" not in all_resources
     assert "rolebindings" not in all_resources
+
+
+def test_path_graph_argo_workflow_rbac_for_cursor_agent():
+    """path agent needs get/list (+ create/delete/patch for rerun) on workflows in path-graph."""
+    docs = _docs()
+    role = next(
+        d
+        for d in docs
+        if d.get("kind") == "Role" and d["metadata"]["name"] == "cursor-agent-argo-workflows"
+    )
+    assert role["metadata"]["namespace"] == "path-graph"
+    rule = next(r for r in role["rules"] if "workflows" in r.get("resources", []))
+    assert rule["apiGroups"] == ["argoproj.io"]
+    for verb in ("get", "list", "create", "delete", "patch"):
+        assert verb in rule["verbs"]
+
+    binding = next(
+        d
+        for d in docs
+        if d.get("kind") == "RoleBinding"
+        and d["metadata"]["name"] == "cursor-agent-argo-workflows"
+    )
+    assert binding["metadata"]["namespace"] == "path-graph"
+    assert binding["roleRef"] == {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "cursor-agent-argo-workflows",
+    }
+    assert binding["subjects"] == [
+        {"kind": "ServiceAccount", "name": "cursor-agent", "namespace": "leantime"}
+    ]
