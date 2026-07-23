@@ -53,8 +53,8 @@ PM must actively manage ticket status:
 
 - `New`: created but not yet started.
 - `In Progress`: design/dev/review is actively underway.
-- `Waiting for Approval`: waiting on Eric/product approval or final human decision.
-- `Blocked`: blocked by access, dependency, failing environment, missing answer, or external service.
+- `Waiting for Approval`: waiting on Eric/product approval, final human decision, **or human-only privilege/secret handoff**.
+- `Blocked`: waiting on another ticket/external dependency, or env failure where an **agent still owns** the next agent-actionable step.
 - `Done`: only after PR merged, tests verified, and deployment/smoke evidence recorded when applicable.
 - `Archived`: duplicate/stale tickets only, with a reason.
 
@@ -64,9 +64,16 @@ Rules:
 2. Do not leave tickets stale after assigning, commenting, reviewing, or receiving blockers.
 3. If a developer asks a blocking question, move ticket to `Blocked` or `Waiting for Approval` depending on who must act.
 4. If PM requests developer action, keep/mark `In Progress`.
-5. If Eric confirmation is required, mark `Waiting for Approval`.
+5. If Eric confirmation **or human-only unblock** is required, mark `Waiting for Approval`, assignee Eric, and `@eric` with a concrete ask — do not leave assignee on a developer who already proved they lack the required privilege (RBAC, admin/BFF session, secrets, cluster policy).
+6. Never ping-pong `Blocked` + developer assignee when the developer's latest evidence is "cannot proceed without human privilege"; convert to Eric handoff immediately so checkpoint watchers (which skip Blocked/Approval) do not create silent drift.
 - If implementation is complete but deploy verification is missing, do not mark `Done`.
 - In active watcher/agent environments, re-read the active ticket comments immediately before git-ship or review handoff, and again after opening a PR. If another agent already opened or merged the same scope, do not keep a duplicate PR alive just to satisfy a handoff shape; close the duplicate with a GitHub comment, add a Leantime correction/outcome on the active ticket, and base status on the canonical merged/open PR.
+
+### Human-only privilege handoff
+
+Examples that require Eric handoff (not developer Blocked loops): Argo `workflows.argoproj.io` get/list/create denied for the agent SA; BFF `401` without admin session; missing `ADMIN_PASSWORD` / operator secret; cluster NetworkPolicy/RBAC change requests.
+
+Handoff comment must include: concrete grant or session needed, already-complete code/PR/bundle evidence, and the post-unblock verification step (e.g. `force_agent=1` GraphRAG rerun + smoke).
 
 ### Reactivated or Reused Tickets
 

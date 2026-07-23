@@ -36,4 +36,4 @@ Use a concise HTML comment on the active ticket with:
 - Workflow phase and pod status.
 - Active bundle version/id/checksum.
 - Whether the original error point appears passed (for example agent-pool shows `graph-extractor` job polling/SGLang calls) vs final smoke still pending.
-- Status decision: In Progress while Running, Blocked if auth/RBAC/API prevents action, Done only after success/smoke.
+- Status decision: In Progress while Running; `Waiting for Approval` + Eric assignee when auth/RBAC/API is human-only and no agent-owned path remains; Done only after success/smoke.

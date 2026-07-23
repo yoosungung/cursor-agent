@@ -16,8 +16,8 @@ Use this when a Leantime path-graph ticket has code/PR/bundle work completed but
    - submit GraphRAG via `POST /api/pipeline/projects/{project_id}/graphrag` when no active run blocks it.
 4. If BFF returns `409 GraphRAG workflow already active for batch ...`, do not open a duplicate rerun or mark Done. Inspect the active workflow/pod/logs and record that terminal evidence is pending.
 5. Check OpenAPI/request schema before claiming a parameter is supported. In the observed agents-runtime BFF, `GraphragSubmitRequest` accepted only `batch_id`; `force_agent` was not exposed through BFF even though the Argo WorkflowTemplate has a `force_agent` parameter.
-6. If direct Kubernetes RBAC lacks `create/delete/patch workflows.argoproj.io`, state the exact limitation and do not pretend to have forced a rerun. Read-only `get/list workflows`, pod logs, and BFF reconcile may still be enough for partial closeout.
-7. Leave the Leantime ticket In Progress/Blocked until workflow terminal status plus smoke evidence is present. Do not close from code/CI/bundle evidence alone.
+6. If direct Kubernetes RBAC lacks `create/delete/patch workflows.argoproj.io` **and** BFF/admin session is also unavailable, do not leave developer-owned `Blocked` loops — hand off to Eric (`Waiting for Approval`, assignee Eric, concrete grant/session ask). Read-only `get/list workflows`, pod logs, and BFF reconcile may still be enough for partial closeout when those paths work.
+7. Leave the Leantime ticket In Progress (active rerun) or Waiting for Approval (human-only) until workflow terminal status plus smoke evidence is present. Do not close from code/CI/bundle evidence alone.
 
 ## Evidence to record
 

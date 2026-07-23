@@ -85,6 +85,9 @@ def test_build_candy_bundle_includes_leantime_pm_skill():
     assert "candy is the **PM**" in skill or "candy` is the **PM**" in skill or "candy is the PM" in skill.lower()
     assert "Use when acting as a Leantime project manager" in skill
     assert "30-Minute Developer Work Timebox" in skill
+    assert "Human-only handoff" in skill
+    assert "Waiting for Approval" in skill
+    assert "human-only" in skill.lower()
     # Progressive disclosure: keep SKILL.md lean; heavy playbooks in references/.
     assert len(skill.splitlines()) < 200
     assert "## PM Workflow" not in skill
@@ -103,6 +106,9 @@ def test_build_candy_bundle_includes_leantime_pm_skill():
     ]
     for key in refs:
         assert key in bundle, key
+    ticket_ops = bundle[refs[2]]
+    assert "Human-only privilege handoff" in ticket_ops
+    assert "Waiting for Approval" in ticket_ops
     jsonrpc = bundle[refs[0]]
     assert "/opt/data/config.yaml" not in jsonrpc
     assert "LEANTIME_URL" in jsonrpc

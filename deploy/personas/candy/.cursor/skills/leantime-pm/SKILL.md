@@ -1,7 +1,7 @@
 ---
 name: leantime-pm
 description: "Use when acting as a Leantime project manager: translate requirements into tickets, coordinate developers, manage design review, track PRs/tests/deployments, run 30-minute checkpoints, and escalate decisions to Eric."
-version: 1.1.0
+version: 1.2.0
 author: candy persona
 license: MIT
 ---
@@ -55,9 +55,9 @@ Rules:
    - **Simple work interruption**: the task was paused or dropped without a technical blocker; instruct the same developer to resume from the current state and provide the next checkpoint/PR/test evidence.
 3. Ask for a concise checkpoint comment in Leantime before continuing: what was attempted, current blocker or interruption reason, changed files/branch/PR if any, and the smallest next step.
 4. If the task is too large, create/adjust subtasks before more implementation work continues. Keep the original ticket as parent/context or mark it Blocked/In Progress with a comment explaining the split.
-5. If the developer appears stuck, add a PM comment with the required diagnostic/evidence, move status to `Blocked` when waiting on a real blocker, or reassign when ownership is wrong.
+5. If the developer appears stuck, add a PM comment with the required diagnostic/evidence. If the blocker is agent-unactionable (RBAC, secrets, admin/BFF session, cluster policy), **hand off to Eric** (see Escalate / human-only). Otherwise move to `Blocked` when waiting on another ticket/external dependency, or reassign when ownership is wrong.
 6. If it is a simple work interruption, keep/mark the ticket `In Progress`, tell the developer to resume immediately, and require the next 30-minute checkpoint or PR/test evidence.
-7. Escalate to Eric only when the response requires product/scope decision, extra time/cost, different owner, or a risk tradeoff the PM cannot decide.
+7. Escalate to Eric for product/scope/cost/risk decisions **and** whenever the next step requires human-only credentials or cluster privilege that agents cannot obtain.
 
 ### Checkpoint watcher runs
 
@@ -70,7 +70,7 @@ When Eric asks for a 30-minute checkpoint monitor/watchdog run:
    - If `active_count == 0`, strengthen the no-op verification by checking active subtasks. Prefer a grouped SQL/count query when available; avoid looping through every parent with `getAllSubtasks` because it can trigger 429s. If both top-level active count and active subtask count are zero, add no comments and final-report status-count skip reasons only.
 3. Before commenting, read the latest comments for each candidate and suppress duplicates when a PM/candy checkpoint request was posted within the last 30 minutes on the same ticket.
 4. Identify the last actionable developer comment. If it is older than 30 minutes and there is no PR/test/completion/blocker evidence after it, add at most one concise checkpoint request comment asking for: attempted work, single cause, branch/PR, and next minimum step.
-5. Use exactly one cause category in the comment: (1) oversized/ambiguous → split into subtasks; (2) failure/blocked → unblock, reassign, mark Blocked, or escalate; (3) simple interruption → resume and request next 30-minute evidence.
+5. Use exactly one cause category in the comment: (1) oversized/ambiguous → split into subtasks; (2) failure/blocked → unblock, reassign, mark Blocked, or **hand off to Eric** when human-only; (3) simple interruption → resume and request next 30-minute evidence.
 6. Keep each run bounded: add no more than 5 checkpoint comments total, use only known Leantime mention ids, avoid email/code/long explanations, and re-read comments after adding if verification matters.
 7. Final report for watchdog runs should be short and operational: list acted tickets, classification, and skipped tickets/reasons only. If there are zero `In Progress` development items, add no comments and report concise status-count skip reasons (for example Done/Archived, Blocked, New, Waiting for Approval counts plus any notable skipped active-ish ticket IDs).
 
@@ -87,13 +87,24 @@ Ask Eric with `<a class="tiptap-mention" data-tagged-user-id="1">@eric</a>` when
 - Acceptance criteria need product judgment
 - Security/privacy policy is unclear
 - PM cannot decide from existing written requirements
+- **Human-only unblock**: next step needs privileges/secrets agents lack (e.g. Argo Workflow RBAC get/list/create, BFF admin session / `ADMIN_PASSWORD`, cluster policy change, operator-only UI)
+
+### Human-only handoff (required shape)
+
+When a developer (or candy) has already recorded evidence that they cannot proceed without human privilege:
+
+1. Do **not** leave assignee on that developer and ping them again in checkpoint loops.
+2. Set status to `Waiting for Approval` (`2`), assignee to Eric (`editorId` / assignedTo = `1`).
+3. Add one concise HTML comment: `@eric` mention, concrete ask (what grant/secret/session), code/PR/bundle state already done, and what to verify after unblocking.
+4. Do **not** use `Blocked` for human-only privilege waits — `Blocked` is for other tickets/external deps or environment failure while an agent still owns the next agent-actionable step.
+5. Checkpoint watcher skips `Blocked` and `Waiting for Approval`; human-only waits must be Approval so they surface to Eric instead of silent Blocked drift.
 
 ## Status Guidance
 
 - `New`: ticket created, not started
 - `In Progress`: active design/dev/review underway
-- `Waiting for Approval`: Eric/product decision or final approval needed
-- `Blocked`: blocked by dependency/access/failing environment
+- `Waiting for Approval`: Eric/product decision, final approval, **or human-only privilege/secret handoff**
+- `Blocked`: waiting on another ticket/external dependency, or env failure where an agent still owns the next step
 - `Done`: merged/deployed/verified, or PM work completed
 - `Archived`: duplicate/stale ticket; preserve a note pointing to the canonical ticket
 
