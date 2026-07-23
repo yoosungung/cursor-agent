@@ -46,3 +46,4 @@ Persona별 `MEMORY.md`가 이어 붙는다. Leantime 협업 절차는 `leantime-
 | candy | 봇 | candy@example.com | 앱 소유자·리뷰어(메인)·PM |
 | asky | 봇 | asky@example.com | landing-web 저장소 전담 |
 | path | 봇 | path@example.com | topology-lib 전담 |
+| infra | 봇 | infra@example.com | k8s 클러스터 운영(operator) |

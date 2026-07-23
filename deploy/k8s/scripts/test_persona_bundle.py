@@ -115,12 +115,40 @@ def test_build_candy_bundle_includes_leantime_pm_skill():
     assert "LEANTIME_ACCESS_TOKEN" in jsonrpc
 
 
+def test_build_infra_bundle_includes_k8s_operator_skill():
+    bundle = build_persona_bundle("infra", PERSONAS_ROOT)
+    skill_key = ".cursor/skills/k8s-operator-operations/SKILL.md"
+    assert skill_key in bundle
+    skill = bundle[skill_key]
+    assert "metadata:\n  hermes:" not in skill
+    assert "Operate Kubernetes clusters" in skill
+    assert "kubectl" in skill
+    assert "Prefer read-only" in skill or "read-only" in skill.lower()
+    assert "k8s 운영 리포트" in skill
+    assert len(skill.splitlines()) < 200
+    memory = bundle[".cursor/MEMORY.md"]
+    assert "k8s-operator-operations" in memory
+    assert "infra" in memory.lower()
+    refs = [
+        ".cursor/skills/k8s-operator-operations/references/operator-rbac.md",
+        ".cursor/skills/k8s-operator-operations/references/resource-monitoring-rbac.md",
+        ".cursor/skills/k8s-operator-operations/references/health-checks.md",
+        ".cursor/skills/k8s-operator-operations/references/service-smoke-tests.md",
+        ".cursor/skills/k8s-operator-operations/references/postgres-temp-diskpressure.md",
+        ".cursor/skills/k8s-operator-operations/references/argo-partial-rbac.md",
+        ".cursor/skills/k8s-operator-operations/references/scheduled-reports.md",
+        ".cursor/skills/k8s-operator-operations/references/deployment-patches.md",
+    ]
+    for key in refs:
+        assert key in bundle, key
+
+
 def test_persona_bundle_skips_sample_templates():
     bundle = build_persona_bundle("candy", PERSONAS_ROOT)
     assert "MEMORY.md.sample" not in bundle
     assert not any(k.endswith(".sample") for k in bundle)
     memory = bundle[".cursor/MEMORY.md"]
-    assert "봇 (sessions)" in memory
+    assert "type: sessions" in memory
     assert "hermes (openai)" not in memory
     assert "leantime-pm" in memory
 

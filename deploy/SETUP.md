@@ -109,7 +109,7 @@ kubectl -n leantime exec cursor-agent-runtime-0 -c agent-runner -- gh auth statu
 
 `GH_TOKEN` 없이 봇 Pod는 시작하지 않는다 (`entrypoint.sh`).
 
-agent-runner 이미지에 **Python 3.12 + uv**, **kubectl**(in-cluster 로그), **gh**, **git** 포함. Pod는 `cursor-agent` ServiceAccount로 `leantime` namespace Pod/로그 읽기.
+agent-runner 이미지에 **Python 3.12 + uv**, **kubectl**(in-cluster), **gh**, **git** 포함. Pod는 `cursor-agent` ServiceAccount + ClusterRole `cursor-agent-observer`로 클러스터 모니터링·제한적 kubectl 작업(infra 포함). RBAC write·Secret 전역 list는 기본 미부여.
 
 ## 4. 이미지 빌드·푸시
 

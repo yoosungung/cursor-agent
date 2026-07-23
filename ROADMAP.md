@@ -43,6 +43,7 @@ M0–M3 코드·K8s·이미지 배포 완료. **5 agent Pod Running**, bridge.js
 - [x] Goose A안(보수): docs + runner `budget`/`policy` preamble·로그, `success_checks`, context summary, tool-class/delegation prompt (`docs/goose/06-gap-with-cursor-agent.md`)
 - [x] Goose A안 Phase 2: `success_checks` hard 검증(SDK `status=finished` AND 마지막 Leantime mutation) + 같은 session 제한 재시도(`success_retry.max_attempts`) → `verification_failed` (`agent-runner/src/success-verify.ts`)
 - [x] candy Hermes(`openai`) → agent-runner(`sessions`) + persona `leantime-pm` 이식·컷오버
+- [x] infra persona + `k8s-operator-operations` 스킬 + `infra-k8s-daily` 스케줄 + ClusterRole observer
 
 ---
 

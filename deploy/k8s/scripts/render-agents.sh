@@ -54,15 +54,16 @@ for agent in deploy_agents:
     name = agent["name"]
     persona = agent.get("persona", name)
     email = agent["email"]
-    git_repo = agent.get("git_repo_url", "")
+    # YAML `git_repo_url:` (null) must become "" for str.replace.
+    git_repo = str(agent.get("git_repo_url") or "")
 
     # Default shared Secret key; per-agent override e.g. candy → GH_TOKEN_candy.
     gh_token_secret_key = str(agent.get("gh_token_secret_key") or "GH_TOKEN").strip() or "GH_TOKEN"
 
     ss = (
         ss_tpl.replace("{{NAME}}", name)
-        .replace("{{PERSONA}}", persona)
-        .replace("{{EMAIL}}", email)
+        .replace("{{PERSONA}}", str(persona))
+        .replace("{{EMAIL}}", str(email))
         .replace("{{GIT_REPO}}", git_repo)
         .replace("{{RUNNER_IMAGE}}", runner_image)
         .replace("{{MODEL}}", agent_model(agent))

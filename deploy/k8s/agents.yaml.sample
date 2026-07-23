@@ -33,6 +33,13 @@ agents:
     git_repo_url: https://github.com/demo-org/topology-lib.git
     type: sessions
 
+  - name: infra
+    leantime_user_id: 13
+    email: infra@example.com
+    persona: infra
+    git_repo_url: https://github.com/demo-org/k8s-test.git
+    type: sessions
+
 settings:
   debounce_ms: 3000
   mention_routing: true
@@ -59,7 +66,7 @@ settings:
         체크포인트 요청 코멘트 1건(시도·원인·branch/PR·다음 최소 단계).
         원인은 하나만: (1) 과대/모호→서브태스크 분할 (2) 실패/차단→해제·재배정·Blocked·에스컬
         (3) 단순 중단→재개+다음 30분 증거 요청.
-        멘션은 알려진 id만(eric=1,candy=4,asky=5,path=6).
+        멘션은 알려진 id만(eric=1,candy=4,asky=5,path=6,infra=13).
         코드/메일/장문 금지. 실행당 코멘트 ≤5. 끝나면 조치·분류·스킵 사유만 짧게.
       success_checks:
         - "At most 5 checkpoint comments added this run."
@@ -81,3 +88,15 @@ settings:
         - "Changes are committed and pushed directly to the default branch (no PR)."
         - "Do not run git-ship or gh pr create."
         - "On success create/update a Done ticket; on failure a New ticket with blocker."
+    - id: infra-k8s-daily
+      cron: "0 1 * * *"
+      agents: [infra]
+      prompt: >-
+        Use the k8s-operator-operations skill. 일일 k8s 운영 리포트(read-only).
+        worktree가 clean일 때만 git pull --ff-only origin main; 아니면 blocker만 보고.
+        전체 discovery 후 이상 Pod·rollout·svc/endpoints·PV/PVC·node pressure·Warning 이벤트 점검.
+        mutate/배포 금지. 결과는 스킬의 한국어 리포트 포맷으로 짧게.
+      success_checks:
+        - "Report uses the k8s 운영 리포트 format with a clear status summary."
+        - "No mutating kubectl actions in this scheduled run."
+        - "Partial RBAC denials are reported distinctly from cluster faults."
