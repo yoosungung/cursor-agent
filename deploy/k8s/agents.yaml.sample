@@ -71,3 +71,13 @@ settings:
       success_checks:
         - "New GitHub issues are reflected as Leantime tickets or explicitly skipped with a comment."
         - "Blockers are reported via add_comment."
+    - id: finder-wiki
+      cron: "30 23 * * *"
+      agents: [finder]
+      prompt: >-
+        위키 리서치(km-researcher) 후 default branch(main)에 직접 commit·push.
+        PR·feature branch·git-ship 금지. 실패 시 ticket(New), 성공 시 ticket(Done).
+      success_checks:
+        - "Changes are committed and pushed directly to the default branch (no PR)."
+        - "Do not run git-ship or gh pr create."
+        - "On success create/update a Done ticket; on failure a New ticket with blocker."
