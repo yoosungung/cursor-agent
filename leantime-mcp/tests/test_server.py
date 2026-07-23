@@ -107,6 +107,45 @@ async def test_delete_comment_tool_delegates_to_client(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_list_tickets_tool_passes_updated_since(monkeypatch):
+    monkeypatch.setenv("LEANTIME_URL", "https://leantime.example.com")
+    monkeypatch.setenv("LEANTIME_ACCESS_TOKEN", "pat")
+
+    mock_client = AsyncMock()
+    mock_client.list_tickets.return_value = [{"id": 1}]
+    monkeypatch.setattr(server, "get_client", lambda: mock_client)
+
+    result = await server.list_tickets(project_id=21, updated_since="2026-07-18")
+
+    mock_client.list_tickets.assert_awaited_once_with(
+        project_id=21, updated_since="2026-07-18"
+    )
+    assert json.loads(result) == [{"id": 1}]
+
+
+@pytest.mark.asyncio
+async def test_get_comments_tool_passes_since_and_mention(monkeypatch):
+    monkeypatch.setenv("LEANTIME_URL", "https://leantime.example.com")
+    monkeypatch.setenv("LEANTIME_ACCESS_TOKEN", "pat")
+
+    mock_client = AsyncMock()
+    mock_client.get_comments.return_value = [{"id": 7}]
+    monkeypatch.setattr(server, "get_client", lambda: mock_client)
+
+    result = await server.get_comments(
+        "ticket", 99, since="2026-07-18", mentioned_user_id=4
+    )
+
+    mock_client.get_comments.assert_awaited_once_with(
+        module="ticket",
+        module_id=99,
+        since="2026-07-18",
+        mentioned_user_id=4,
+    )
+    assert json.loads(result) == [{"id": 7}]
+
+
+@pytest.mark.asyncio
 async def test_update_ticket_tool_delegates_partial_fields(monkeypatch):
     monkeypatch.setenv("LEANTIME_URL", "https://leantime.example.com")
     monkeypatch.setenv("LEANTIME_ACCESS_TOKEN", "pat")

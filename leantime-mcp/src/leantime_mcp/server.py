@@ -105,10 +105,17 @@ async def get_ticket(ticket_id: int) -> str:
 
 
 @app.tool()
-async def list_tickets(project_id: int = None) -> str:
-    """List tickets, optionally filtered by project ID."""
+async def list_tickets(project_id: int = None, updated_since: str = None) -> str:
+    """List tickets, optionally filtered by project ID and last-updated time.
+
+    updated_since: ISO date/datetime (e.g. 2026-07-18). Keeps tickets whose
+    `modified` (fallback: `date`) is on or after that instant. Filtering is
+    client-side; Leantime JSON-RPC has no modifiedAfter for tickets.
+    """
     client = get_client()
-    result = await client.list_tickets(project_id)
+    result = await client.list_tickets(
+        project_id=project_id, updated_since=updated_since
+    )
     return json.dumps(result, indent=2)
 
 
@@ -197,10 +204,26 @@ async def delete_comment(comment_id: int) -> str:
 
 
 @app.tool()
-async def get_comments(module: str, module_id: int) -> str:
-    """Get comments for a module (ticket, project, etc.)."""
+async def get_comments(
+    module: str,
+    module_id: int,
+    since: str = None,
+    mentioned_user_id: int = None,
+) -> str:
+    """Get comments for a module (ticket, project, etc.).
+
+    since: ISO date/datetime; keep comments with `date` on/after that instant
+    (comments have no reliable `modified` field).
+    mentioned_user_id: keep only comments whose HTML mentions that user via
+    `data-tagged-user-id` (plain `@name` text does not count).
+    """
     client = get_client()
-    result = await client.get_comments(module=module, module_id=module_id)
+    result = await client.get_comments(
+        module=module,
+        module_id=module_id,
+        since=since,
+        mentioned_user_id=mentioned_user_id,
+    )
     return json.dumps(result, indent=2)
 
 

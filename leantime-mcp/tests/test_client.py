@@ -89,6 +89,77 @@ async def test_delete_comment_uses_comments_rpc(client: LeantimeClient):
 
 
 @pytest.mark.asyncio
+async def test_list_tickets_filters_by_updated_since(client: LeantimeClient):
+    tickets = [
+        {"id": 1, "modified": "2026-07-20 10:00:00"},
+        {"id": 2, "modified": "2026-07-10 10:00:00"},
+        {"id": 3, "date": "2026-07-22 08:00:00"},  # no modified → fall back to date
+        {"id": 4, "modified": "2026-07-18T12:00:00"},
+    ]
+    with patch.object(client, "call", new_callable=AsyncMock) as call:
+        call.return_value = tickets
+
+        result = await client.list_tickets(updated_since="2026-07-18")
+
+        method, params = call.await_args.args
+        assert method == "leantime.rpc.Tickets.Tickets.getAll"
+        assert params == {"searchCriteria": {}}
+        assert [t["id"] for t in result] == [1, 3, 4]
+
+
+@pytest.mark.asyncio
+async def test_list_tickets_passes_project_and_skips_filter_without_since(
+    client: LeantimeClient,
+):
+    with patch.object(client, "call", new_callable=AsyncMock) as call:
+        call.return_value = [{"id": 9, "modified": "2020-01-01 00:00:00"}]
+
+        result = await client.list_tickets(project_id=21)
+
+        method, params = call.await_args.args
+        assert method == "leantime.rpc.Tickets.Tickets.getAll"
+        assert params == {"searchCriteria": {"currentProject": 21}}
+        assert result == [{"id": 9, "modified": "2020-01-01 00:00:00"}]
+
+
+@pytest.mark.asyncio
+async def test_get_comments_filters_since_and_mentioned_user(client: LeantimeClient):
+    comments = [
+        {
+            "id": 1,
+            "date": "2026-07-20 10:00:00",
+            "text": '<a class="tiptap-mention" data-tagged-user-id="4">@candy</a> hi',
+        },
+        {
+            "id": 2,
+            "date": "2026-07-10 10:00:00",
+            "text": '<a data-tagged-user-id="4">@candy</a> old',
+        },
+        {
+            "id": 3,
+            "date": "2026-07-21 10:00:00",
+            "text": '<a data-tagged-user-id="6">@path</a> other',
+        },
+        {
+            "id": 4,
+            "date": "2026-07-22 10:00:00",
+            "text": "plain @candy text is not a mention",
+        },
+    ]
+    with patch.object(client, "call", new_callable=AsyncMock) as call:
+        call.return_value = comments
+
+        result = await client.get_comments(
+            "ticket", 99, since="2026-07-18", mentioned_user_id=4
+        )
+
+        method, params = call.await_args.args
+        assert method == "leantime.rpc.Comments.Comments.getComments"
+        assert params == {"module": "ticket", "entityId": 99}
+        assert [c["id"] for c in result] == [1]
+
+
+@pytest.mark.asyncio
 async def test_update_ticket_uses_patch_not_full_update(client: LeantimeClient):
     """updateTicket wipes omitted fields; patchTicket is partial-safe."""
     with patch.object(client, "call", new_callable=AsyncMock) as call:

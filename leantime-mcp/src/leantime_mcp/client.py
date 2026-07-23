@@ -4,11 +4,72 @@
 
 """Leantime JSON-RPC 2.0 client implementation."""
 
-import httpx
-from typing import Any, Optional
 import logging
+import re
+from datetime import datetime
+from typing import Any, Optional
+
+import httpx
 
 logger = logging.getLogger(__name__)
+
+_MENTION_USER_RE = re.compile(
+    r'data-tagged-user-id=["\'](\d+)["\']',
+    re.IGNORECASE,
+)
+
+
+def _parse_datetime(value: str) -> datetime:
+    """Parse ISO or Leantime ``YYYY-MM-DD[ HH:MM:SS]`` timestamps as naive UTC."""
+    text = value.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    if " " in text and "T" not in text:
+        text = text.replace(" ", "T", 1)
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError as exc:
+        raise ValueError(f"Invalid datetime: {value!r}") from exc
+    if parsed.tzinfo is not None:
+        from datetime import timezone
+
+        return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+    return parsed
+
+
+def _item_timestamp(item: dict, fields: tuple[str, ...]) -> Optional[datetime]:
+    for field in fields:
+        raw = item.get(field)
+        if raw is None or raw == "":
+            continue
+        try:
+            return _parse_datetime(str(raw))
+        except ValueError:
+            continue
+    return None
+
+
+def _filter_since(
+    items: list,
+    since: str,
+    fields: tuple[str, ...],
+) -> list:
+    cutoff = _parse_datetime(since)
+    filtered: list = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        ts = _item_timestamp(item, fields)
+        if ts is not None and ts >= cutoff:
+            filtered.append(item)
+    return filtered
+
+
+def _mentions_user(text: str, user_id: int) -> bool:
+    for match in _MENTION_USER_RE.finditer(text or ""):
+        if int(match.group(1)) == user_id:
+            return True
+    return False
 
 
 class LeantimeAPIError(Exception):
@@ -89,12 +150,20 @@ class LeantimeClient:
     async def get_ticket(self, ticket_id: int) -> dict:
         return await self.call("leantime.rpc.Tickets.Tickets.getTicket", {"id": ticket_id})
 
-    async def list_tickets(self, project_id: Optional[int] = None) -> list:
+    async def list_tickets(
+        self,
+        project_id: Optional[int] = None,
+        updated_since: Optional[str] = None,
+    ) -> list:
         searchCriteria = {}
         if project_id:
             searchCriteria["currentProject"] = project_id
         params = {"searchCriteria": searchCriteria}
-        return await self.call("leantime.rpc.Tickets.Tickets.getAll", params)
+        result = await self.call("leantime.rpc.Tickets.Tickets.getAll", params)
+        if updated_since and isinstance(result, list):
+            # Prefer ticket.modified (last update); fall back to date when absent.
+            return _filter_since(result, updated_since, ("modified", "date"))
+        return result
 
     async def create_ticket(
         self,
@@ -185,12 +254,31 @@ class LeantimeClient:
             {"commentId": comment_id},
         )
 
-    async def get_comments(self, module: str, module_id: int) -> list:
+    async def get_comments(
+        self,
+        module: str,
+        module_id: int,
+        since: Optional[str] = None,
+        mentioned_user_id: Optional[int] = None,
+    ) -> list:
         params = {
             "module": module,
             "entityId": module_id,
         }
-        return await self.call("leantime.rpc.Comments.Comments.getComments", params)
+        result = await self.call("leantime.rpc.Comments.Comments.getComments", params)
+        if not isinstance(result, list):
+            return result
+        # Comments expose creation `date` (no reliable `modified` field).
+        if since:
+            result = _filter_since(result, since, ("date", "datetime", "modified"))
+        if mentioned_user_id is not None:
+            result = [
+                c
+                for c in result
+                if isinstance(c, dict)
+                and _mentions_user(str(c.get("text") or c.get("comment") or ""), mentioned_user_id)
+            ]
+        return result
 
     async def add_timesheet(self, user_id: int, ticket_id: int, hours: float, date: str, **kwargs) -> dict:
         params = {
