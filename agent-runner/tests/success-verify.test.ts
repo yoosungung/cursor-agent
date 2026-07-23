@@ -40,6 +40,53 @@ describe("matchLeantimeMutation", () => {
   });
 });
 
+describe("evaluateSuccess CallMcpTool / mcp unwrap", () => {
+  const checks = ["Leave add_comment"];
+
+  it("passes when last tool is mcp with toolName add_comment and nested args", () => {
+    const last = {
+      name: "mcp",
+      status: "completed" as const,
+      args: {
+        toolName: "add_comment",
+        providerIdentifier: "user-leantime",
+        args: { module: "ticket", module_id: 42, comment: "done" },
+      },
+      result: "true",
+    };
+    expect(evaluateSuccess("finished", last, 42, checks)).toEqual({ ok: true, reason: "ok" });
+  });
+
+  it("passes when last tool is CallMcpTool with toolName create_ticket (ticket-less)", () => {
+    const last = {
+      name: "CallMcpTool",
+      status: "completed" as const,
+      args: {
+        toolName: "create_ticket",
+        arguments: { headline: "triage", projectId: 16 },
+      },
+      result: "739",
+    };
+    expect(evaluateSuccess("finished", last, undefined, checks)).toEqual({
+      ok: true,
+      reason: "ok",
+    });
+  });
+
+  it("fails when mcp toolName is a read", () => {
+    const last = {
+      name: "mcp",
+      status: "completed" as const,
+      args: { toolName: "get_ticket", args: { ticket_id: 42 } },
+      result: "{}",
+    };
+    expect(evaluateSuccess("finished", last, 42, checks)).toMatchObject({
+      ok: false,
+      reason: "last_tool_not_mutation:mcp",
+    });
+  });
+});
+
 describe("createToolEvidence", () => {
   it("merges args from running into the completed record", () => {
     const ev = createToolEvidence();

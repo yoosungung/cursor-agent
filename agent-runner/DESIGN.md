@@ -71,6 +71,7 @@ HTTP 계약(`POST /sessions`, `202` prompt, ticket↔session)은 유지한다. o
 2. run의 **마지막 완료 tool_call**이 성공한 Leantime mutation이다.
    - 허용 목록: `add_comment`(module=ticket, module_id=active), `update_ticket`(ticket_id=active), ticket 없는 schedule의 `create_ticket`.
    - tool 이름은 접미사 매칭으로 정규화(`*_add_comment` 등)한다. `status=error`나 명백한 실패 결과(`false`)는 거부한다.
+   - SDK/`CallMcpTool` 래퍼(`name`이 `mcp` 또는 `CallMcpTool`)는 `args.toolName`과 nested `args`/`arguments`로 풀어 mutation·대상을 판정한다.
    - 조회 tool, 대상 ticket을 증명 못 하는 comment 수정/삭제는 성공 증거로 쓰지 않는다.
 
 - MVP는 **stream tool evidence** 기반이다. API read-after-write와 comment ID 반환은 다음 강화다.

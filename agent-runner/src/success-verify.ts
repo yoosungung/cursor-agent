@@ -77,6 +77,29 @@ function asRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
+/** SDK stream name for MCP is `mcp`; IDE-style wrapper may be `CallMcpTool`. */
+function isMcpWrapper(name: string): boolean {
+  const normalized = name.trim().toLowerCase();
+  return normalized === "mcp" || normalized === "callmcptool";
+}
+
+/**
+ * Resolve the effective Leantime tool name and args. MCP wrappers carry the
+ * real tool in `toolName` and params in nested `args` / `arguments`.
+ */
+export function resolveToolCall(last: ToolRecord): { name: string; args: Record<string, unknown> } {
+  const outer = asRecord(last.args);
+  if (!isMcpWrapper(last.name)) {
+    return { name: last.name, args: outer };
+  }
+  const toolName = typeof outer.toolName === "string" ? outer.toolName : "";
+  const nested = outer.args ?? outer.arguments;
+  return {
+    name: toolName || last.name,
+    args: nested !== undefined ? asRecord(nested) : {},
+  };
+}
+
 function resultLooksFailed(result: unknown): boolean {
   if (result === false) {
     return true;
@@ -124,7 +147,8 @@ export function evaluateSuccess(
   if (last.status === "error") {
     return { ok: false, reason: `tool_error:${last.name}` };
   }
-  const mutation = matchLeantimeMutation(last.name);
+  const resolved = resolveToolCall(last);
+  const mutation = matchLeantimeMutation(resolved.name);
   if (!mutation) {
     return { ok: false, reason: `last_tool_not_mutation:${last.name}` };
   }
@@ -132,7 +156,7 @@ export function evaluateSuccess(
     return { ok: false, reason: `tool_result_failed:${mutation}` };
   }
 
-  const args = asRecord(last.args);
+  const args = resolved.args;
   if (ticketId === undefined) {
     return mutation === "create_ticket"
       ? { ok: true, reason: "ok" }
