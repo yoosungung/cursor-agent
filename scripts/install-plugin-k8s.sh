@@ -23,6 +23,11 @@ cp "$PLUGIN"/BridgeConfig.php \
    "$PLUGIN"/SessionStore.php \
    "$PLUGIN"/ScheduleCron.php \
    "$PLUGIN"/ScheduleTicker.php \
+   "$PLUGIN"/ScheduleGates.php \
+   "$PLUGIN"/DefaultScheduleGates.php \
+   "$PLUGIN"/InProgressTicketProbe.php \
+   "$PLUGIN"/NullInProgressTicketProbe.php \
+   "$PLUGIN"/LeantimeInProgressTicketProbe.php \
    "$PLUGIN"/TicketLookup.php \
    "$PLUGIN"/NullTicketLookup.php \
    "$PLUGIN"/LeantimeTicketLookup.php \
@@ -60,7 +65,9 @@ data:
     for f in BridgeConfig.php Listener.php Plugin.php ResilientRunnerClient.php Router.php \
              RunnerClient.php RunnerTransport.php OpenAIRunnerClient.php DelegatingRunnerClient.php \
              RunnerSessionNotFoundException.php SessionStore.php \
-             ScheduleCron.php ScheduleTicker.php TicketLookup.php NullTicketLookup.php \
+             ScheduleCron.php ScheduleTicker.php ScheduleGates.php DefaultScheduleGates.php \
+             InProgressTicketProbe.php NullInProgressTicketProbe.php LeantimeInProgressTicketProbe.php \
+             TicketLookup.php NullTicketLookup.php \
              LeantimeTicketLookup.php CommentLookup.php NullCommentLookup.php LeantimeCommentLookup.php \
              register.php composer.json bridge.json; do
       cp "$SRC/$f" "$DEST/$f"
