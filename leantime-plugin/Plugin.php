@@ -78,6 +78,11 @@ final class Plugin
 
     public function tickSchedules(): int
     {
-        return (new ScheduleTicker($this->config, $this->sessions, $this->runner))->tick();
+        return (new ScheduleTicker(
+            $this->config,
+            $this->sessions,
+            $this->runner,
+            new DefaultScheduleGates(new LeantimeInProgressTicketProbe())
+        ))->tick();
     }
 }

@@ -28,7 +28,7 @@ Leantime × Cursor Agent 협업 시스템 계약 및 인터페이스.
 | `prompts` | object | `ticket_created`, `ticket_updated`, `comment_added`, `assignee_changed`, `mention` (`{ticket_id}`), `handoff`. Router가 매 이벤트에 `Active ticket_id=N` 스코프 문장을 붙여 MCP 읽기/쓰기를 그 티켓으로 고정한다. |
 | `status_prompts` | object | 상태별 추가 프롬프트 (M3) |
 | `mention_routing` | bool | Tiptap `data-tagged-user-id` 또는 `@email` 멘션 시 해당 runner 알림 (M3) |
-| `schedules[]` | array | 주기 프롬프트. `id`, `cron`(5필드·UTC), `prompt` 필수; `agents`(name 목록) 생략 시 `type != human`이고 `runner_url` 비어 있지 않은 전원. 정본은 `deploy/k8s/agents.yaml` `settings.schedules` → sync |
+| `schedules[]` | array | 주기 프롬프트. `id`, `cron`(5필드·UTC), `prompt` 필수; `agents`(name 목록) 생략 시 `type != human`이고 `runner_url` 비어 있지 않은 전원. 선택 `gates`(string 배열, **생략/`[]` = 무조건 발사**): 나열된 게이트를 **AND**로 만족할 때만 세션 생성. 현재 지원 `in_progress`(top·sub `status=4` 존재). 미지원 게이트는 발사하지 않음(fail-closed). 정본은 `deploy/k8s/agents.yaml` `settings.schedules` → sync |
 
 ### 2.2 플러그인 DB — `cursorbridge_sessions`
 
@@ -95,7 +95,7 @@ HTTP 계약은 불변. 프로세스 내부는 **parent(Hono, SDK 미로드) + SD
 
 ### 2.4.1 schedules 틱
 
-K8s CronJob `cursorbridge-schedule-tick`(* * * * *, UTC)이 Leantime Pod에서 `bin/tick-schedules.php`를 실행한다. due인 `schedules[]`마다 대상 bot에 **티켓 없는 신규 세션**을 `POST /sessions`으로 만든다(프롬프트만; 에이전트가 MCP로 열린 티켓을 찾음). `cursorbridge_sessions`에는 올리지 않는다. 동일 `(schedule_id, YYYY-MM-DDTHH:MM)`는 한 번만 발사(SQLite dedupe).
+K8s CronJob `cursorbridge-schedule-tick`(* * * * *, UTC)이 Leantime Pod에서 `bin/tick-schedules.php`를 실행한다. due인 `schedules[]`마다 `gates`를 평가한 뒤(생략 시 통과), 대상 bot에 **티켓 없는 신규 세션**을 `POST /sessions`으로 만든다(프롬프트만; 에이전트가 MCP로 열린 티켓을 찾음). `cursorbridge_sessions`에는 올리지 않는다. 동일 `(schedule_id, YYYY-MM-DDTHH:MM)`는 한 번만 발사(SQLite dedupe).
 
 ### 2.5 Persona 번들 (`deploy/personas/_default/` + `deploy/personas/{persona}/`)
 

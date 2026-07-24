@@ -58,6 +58,7 @@ settings:
     - id: candy-pm-checkpoint
       cron: "5,20,35,50 * * * *"
       agents: [candy]
+      gates: [in_progress]
       prompt: >-
         Use the leantime-pm skill. 30분 체크포인트 감시. In Progress 개발 티켓/서브태스크만.
         Done·Archived·Waiting for Approval는 스킵(새 개발 요청 코멘트 없으면).

@@ -111,8 +111,34 @@ def normalize_schedules(raw: object) -> list[dict]:
             entry["success_checks"] = normalize_success_checks(
                 checks, f"settings.schedules[{i}].success_checks"
             )
+        gates = item.get("gates")
+        if gates is not None:
+            normalized_gates = normalize_schedule_gates(
+                gates, f"settings.schedules[{i}].gates"
+            )
+            if normalized_gates:
+                entry["gates"] = normalized_gates
         out.append(entry)
     return out
+
+
+KNOWN_SCHEDULE_GATES = frozenset({"in_progress"})
+
+
+def normalize_schedule_gates(raw: object, label: str) -> list[str]:
+    """Validate optional schedules[].gates (omit/[] = no gates)."""
+    if not isinstance(raw, list) or not all(
+        isinstance(item, str) and item.strip() for item in raw
+    ):
+        raise ValueError(f"{label} must be a list of non-empty strings")
+    gates = [item.strip() for item in raw]
+    unknown = sorted(set(gates) - KNOWN_SCHEDULE_GATES)
+    if unknown:
+        raise ValueError(
+            f"{label} has unknown gate(s): {', '.join(unknown)}; "
+            f"known: {', '.join(sorted(KNOWN_SCHEDULE_GATES))}"
+        )
+    return gates
 
 
 def normalize_success_checks(raw: object, label: str) -> list[str]:

@@ -75,6 +75,9 @@
       "agents": [
         "candy"
       ],
+      "gates": [
+        "in_progress"
+      ],
       "success_checks": [
         "At most 5 checkpoint comments added this run.",
         "No duplicate PM checkpoint within 30 minutes on the same ticket.",

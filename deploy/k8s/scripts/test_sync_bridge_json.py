@@ -51,6 +51,19 @@ def test_normalize_schedules_common_and_per_agent():
                 "agents": ["finder"],
                 "prompt": "wiki check",
             },
+            {
+                "id": "candy-pm-checkpoint",
+                "cron": "5,20,35,50 * * * *",
+                "agents": ["candy"],
+                "gates": ["in_progress"],
+                "prompt": "checkpoint",
+            },
+            {
+                "id": "no-gates",
+                "cron": "0 11 * * *",
+                "prompt": "always",
+                "gates": [],
+            },
         ]
     )
     assert out[0] == {
@@ -60,6 +73,17 @@ def test_normalize_schedules_common_and_per_agent():
         "success_checks": ["leave comment"],
     }
     assert out[1]["agents"] == ["finder"]
+    assert "gates" not in out[1]
+    assert out[2]["gates"] == ["in_progress"]
+    assert "gates" not in out[3]
+
+
+def test_normalize_schedule_gates_rejects_unknown():
+    try:
+        mod.normalize_schedule_gates(["in_progress", "nope"], "x")
+        raise AssertionError("expected ValueError")
+    except ValueError as exc:
+        assert "nope" in str(exc)
 
 
 def test_normalize_budget():

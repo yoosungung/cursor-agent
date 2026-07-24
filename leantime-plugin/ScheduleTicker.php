@@ -13,15 +13,18 @@ final class ScheduleTicker
     private BridgeConfig $config;
     private SessionStore $sessions;
     private ResilientRunnerClient $runner;
+    private ScheduleGates $gates;
 
     public function __construct(
         BridgeConfig $config,
         SessionStore $sessions,
-        ResilientRunnerClient $runner
+        ResilientRunnerClient $runner,
+        ?ScheduleGates $gates = null
     ) {
         $this->config = $config;
         $this->sessions = $sessions;
         $this->runner = $runner;
+        $this->gates = $gates ?? new DefaultScheduleGates(new NullInProgressTicketProbe());
     }
 
     public function tick(?DateTimeInterface $now = null): int
@@ -45,6 +48,9 @@ final class ScheduleTicker
                 continue;
             }
             if (!$this->sessions->claimScheduleFire($scheduleId, $fireKey)) {
+                continue;
+            }
+            if (!$this->gates->passes($this->config->gatesForSchedule($schedule))) {
                 continue;
             }
 

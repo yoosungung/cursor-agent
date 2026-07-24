@@ -23,7 +23,7 @@ composer install
 
 Leantime 설치 경로: `app/Plugins/CursorBridge/` (이 디렉터리 복사).
 
-주기 프롬프트: `bin/tick-schedules.php` (`Plugin::tickSchedules()`). 설정은 `bridge.json` `schedules[]`.
+주기 프롬프트: `bin/tick-schedules.php` (`Plugin::tickSchedules()`). 설정은 `bridge.json` `schedules[]`. 선택 `gates[]`(AND; 생략 가능) — `in_progress`는 Leantime Tickets로 top·sub `status=4` 존재 여부를 본 뒤 세션을 만든다.
 
 `type=openai` runner는 env `CURSORBRIDGE_OPENAI_API_KEY` 필요.
 

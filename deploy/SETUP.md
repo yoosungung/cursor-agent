@@ -167,12 +167,17 @@ kubectl -n leantime exec deploy/leantime -- \
 
 ### schedules 틱 (CronJob)
 
-`cursorbridge-schedule-tick`이 **매분(UTC)** `tick-schedules.php`를 실행한다. 정본은 `deploy/k8s/agents.yaml` `settings.schedules` → `sync-bridge-json.py` → `bridge.json`. due인 항목은 대상 agent마다 **티켓 없는 신규 세션**을 만들어 프롬프트를 보낸다 (`agents` 생략 시 `type != human`이고 `runner_url` 있는 전원; 열린 티켓은 에이전트가 MCP로 조회).
+`cursorbridge-schedule-tick`이 **매분(UTC)** `tick-schedules.php`를 실행한다. 정본은 `deploy/k8s/agents.yaml` `settings.schedules` → `sync-bridge-json.py` → `bridge.json`. due인 항목은 선택 `gates`를 통과한 뒤 대상 agent마다 **티켓 없는 신규 세션**을 만들어 프롬프트를 보낸다 (`gates` 생략 시 무조건 발사; `agents` 생략 시 `type != human`이고 `runner_url` 있는 전원; 열린 티켓은 에이전트가 MCP로 조회).
 
 ```bash
 # agents.yaml 예
 # settings:
 #   schedules:
+#     - id: candy-pm-checkpoint
+#       cron: "5,20,35,50 * * * *"
+#       agents: [candy]
+#       gates: [in_progress]   # 선택; In Progress(top·sub) 없으면 세션 생략
+#       prompt: "…"
 #     - id: weekday-check
 #       cron: "0 9 * * 1-5"
 #       prompt: "담당 열린 티켓 점검"

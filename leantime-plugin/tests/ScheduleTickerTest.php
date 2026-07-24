@@ -7,6 +7,8 @@ namespace Leantime\Plugins\CursorBridge\Tests;
 use DateTimeImmutable;
 use DateTimeZone;
 use Leantime\Plugins\CursorBridge\BridgeConfig;
+use Leantime\Plugins\CursorBridge\DefaultScheduleGates;
+use Leantime\Plugins\CursorBridge\InProgressTicketProbe;
 use Leantime\Plugins\CursorBridge\ResilientRunnerClient;
 use Leantime\Plugins\CursorBridge\RunnerClient;
 use Leantime\Plugins\CursorBridge\ScheduleTicker;
@@ -160,5 +162,151 @@ final class ScheduleTickerTest extends TestCase
         $now = new DateTimeImmutable('2026-07-13 08:00:00', new DateTimeZone('UTC'));
         $this->assertSame(0, $ticker->tick($now));
         $this->assertSame(0, $calls);
+    }
+
+    public function testOmittingGatesStillFires(): void
+    {
+        $sessions = SessionStore::inMemory();
+        $calls = 0;
+        $inner = new RunnerClient(
+            function (string $url, array $body) use (&$calls): array {
+                $calls++;
+
+                return ['agent_id' => 'agent-candy'];
+            },
+            static function (string $url): void {
+            }
+        );
+        $config = new BridgeConfig([
+            'agents' => [
+                [
+                    'name' => 'candy',
+                    'leantime_user_id' => 4,
+                    'type' => 'sessions',
+                    'runner_url' => 'http://cursor-agent-candy.leantime.svc:8080',
+                ],
+            ],
+            'schedules' => [
+                [
+                    'id' => 'no-gates',
+                    'cron' => '5 * * * *',
+                    'agents' => ['candy'],
+                    'prompt' => 'always',
+                ],
+            ],
+        ]);
+        $falseProbe = new class implements InProgressTicketProbe {
+            public function hasInProgress(): bool
+            {
+                return false;
+            }
+        };
+        $ticker = new ScheduleTicker(
+            $config,
+            $sessions,
+            new ResilientRunnerClient($inner, $sessions),
+            new DefaultScheduleGates($falseProbe)
+        );
+        $now = new DateTimeImmutable('2026-07-13 09:05:00', new DateTimeZone('UTC'));
+        $this->assertSame(1, $ticker->tick($now));
+        $this->assertSame(1, $calls);
+    }
+
+    public function testInProgressGateSkipsWhenNoneActive(): void
+    {
+        $sessions = SessionStore::inMemory();
+        $calls = 0;
+        $inner = new RunnerClient(
+            function (string $url, array $body) use (&$calls): array {
+                $calls++;
+
+                return ['agent_id' => 'agent-candy'];
+            },
+            static function (string $url): void {
+            }
+        );
+        $config = new BridgeConfig([
+            'agents' => [
+                [
+                    'name' => 'candy',
+                    'leantime_user_id' => 4,
+                    'type' => 'sessions',
+                    'runner_url' => 'http://cursor-agent-candy.leantime.svc:8080',
+                ],
+            ],
+            'schedules' => [
+                [
+                    'id' => 'candy-pm-checkpoint',
+                    'cron' => '5 * * * *',
+                    'agents' => ['candy'],
+                    'gates' => ['in_progress'],
+                    'prompt' => 'checkpoint',
+                ],
+            ],
+        ]);
+        $falseProbe = new class implements InProgressTicketProbe {
+            public function hasInProgress(): bool
+            {
+                return false;
+            }
+        };
+        $ticker = new ScheduleTicker(
+            $config,
+            $sessions,
+            new ResilientRunnerClient($inner, $sessions),
+            new DefaultScheduleGates($falseProbe)
+        );
+        $now = new DateTimeImmutable('2026-07-13 09:05:00', new DateTimeZone('UTC'));
+        $this->assertSame(0, $ticker->tick($now));
+        $this->assertSame(0, $calls);
+    }
+
+    public function testInProgressGateFiresWhenActive(): void
+    {
+        $sessions = SessionStore::inMemory();
+        $calls = 0;
+        $inner = new RunnerClient(
+            function (string $url, array $body) use (&$calls): array {
+                $calls++;
+
+                return ['agent_id' => 'agent-candy'];
+            },
+            static function (string $url): void {
+            }
+        );
+        $config = new BridgeConfig([
+            'agents' => [
+                [
+                    'name' => 'candy',
+                    'leantime_user_id' => 4,
+                    'type' => 'sessions',
+                    'runner_url' => 'http://cursor-agent-candy.leantime.svc:8080',
+                ],
+            ],
+            'schedules' => [
+                [
+                    'id' => 'candy-pm-checkpoint',
+                    'cron' => '5 * * * *',
+                    'agents' => ['candy'],
+                    'gates' => ['in_progress'],
+                    'prompt' => 'checkpoint',
+                ],
+            ],
+        ]);
+        $trueProbe = new class implements InProgressTicketProbe {
+            public function hasInProgress(): bool
+            {
+                return true;
+            }
+        };
+        $ticker = new ScheduleTicker(
+            $config,
+            $sessions,
+            new ResilientRunnerClient($inner, $sessions),
+            new DefaultScheduleGates($trueProbe)
+        );
+        $now = new DateTimeImmutable('2026-07-13 09:05:00', new DateTimeZone('UTC'));
+        $this->assertSame(1, $ticker->tick($now));
+        $this->assertSame(1, $calls);
     }
 }

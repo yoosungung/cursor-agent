@@ -80,6 +80,11 @@ final class BridgeConfigTest extends TestCase
             ['Schedule-specific check'],
             $config->successChecksForSchedule($config->schedules()[0])
         );
+        $this->assertSame([], $config->gatesForSchedule($config->schedules()[0]));
+        $this->assertSame(
+            ['in_progress'],
+            $config->gatesForSchedule(['gates' => ['in_progress', '  ']])
+        );
         $formatted = $config->formatSuccessChecksPrompt($config->successChecks());
         $this->assertStringContainsString('Success checks', $formatted);
         $this->assertStringContainsString('1. Leave add_comment', $formatted);

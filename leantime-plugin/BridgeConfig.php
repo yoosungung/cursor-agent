@@ -172,6 +172,17 @@ final class BridgeConfig
     }
 
     /**
+     * Optional schedule gates (AND). Omitted or empty = no gates (always fire).
+     *
+     * @param array<string, mixed> $schedule
+     * @return list<string>
+     */
+    public function gatesForSchedule(array $schedule): array
+    {
+        return $this->normalizeChecks($schedule['gates'] ?? []);
+    }
+
+    /**
      * @param list<string> $checks
      */
     public function formatSuccessChecksPrompt(array $checks): string
