@@ -1,5 +1,6 @@
-# Candydate script-only CronJobs → kubectl exec into cursor-agent-seewin.
+# Candydate script-only CronJobs → kubectl exec into seewin Pod (by label).
 # LLM jobs stay in agents.yaml settings.schedules (CursorBridge tick).
+# SA cursorbridge-flush: pods get/list/exec only — no statefulsets get.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -35,7 +36,10 @@ spec:
                 - -c
                 - |
                   set -eu
-                  kubectl -n leantime exec statefulset/cursor-agent-seewin -c agent-runner -- \
+                  NS=leantime
+                  POD=$(kubectl -n "$NS" get pod -l app=cursor-agent,persona=seewin \
+                    -o jsonpath='{.items[0].metadata.name}')
+                  kubectl -n "$NS" exec "$POD" -c agent-runner -- \
                     bash /cursor-home/.cursor/skills/candydate-cron/scripts/candydate_pass_ab_launcher.sh
 ---
 apiVersion: batch/v1
@@ -73,7 +77,10 @@ spec:
                 - -c
                 - |
                   set -eu
-                  kubectl -n leantime exec statefulset/cursor-agent-seewin -c agent-runner -- \
+                  NS=leantime
+                  POD=$(kubectl -n "$NS" get pod -l app=cursor-agent,persona=seewin \
+                    -o jsonpath='{.items[0].metadata.name}')
+                  kubectl -n "$NS" exec "$POD" -c agent-runner -- \
                     bash /cursor-home/.cursor/skills/candydate-cron/scripts/candydate_pass_ab_monitor.sh
 ---
 apiVersion: batch/v1
@@ -111,5 +118,8 @@ spec:
                 - -c
                 - |
                   set -eu
-                  kubectl -n leantime exec statefulset/cursor-agent-seewin -c agent-runner -- \
+                  NS=leantime
+                  POD=$(kubectl -n "$NS" get pod -l app=cursor-agent,persona=seewin \
+                    -o jsonpath='{.items[0].metadata.name}')
+                  kubectl -n "$NS" exec "$POD" -c agent-runner -- \
                     bash /cursor-home/.cursor/skills/candydate-cron/scripts/candydate_pass_d_watchdog.sh

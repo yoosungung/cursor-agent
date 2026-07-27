@@ -77,10 +77,18 @@ def test_candydate_cronjobs_manifest() -> None:
     assert "candydate-pass-ab-launch" in text
     assert "candydate-pass-ab-monitor" in text
     assert "candydate-pass-d" in text
-    assert "cursor-agent-seewin" in text
     assert "0 12 * * *" in text
     assert "*/10 * * * *" in text
     assert "0 15,16,17 * * *" in text
+    # SA cursorbridge-flush has pods get/list/exec only — no statefulsets get.
+    # Match flush-retries: resolve Pod by label, then exec by name.
+    assert "statefulset/cursor-agent-seewin" not in text
+    assert "app=cursor-agent,persona=seewin" in text
+    assert text.count("get pod -l app=cursor-agent,persona=seewin") == 3
+    assert text.count('jsonpath=\'{.items[0].metadata.name}\'') == 3
+    assert "candydate_pass_ab_launcher.sh" in text
+    assert "candydate_pass_ab_monitor.sh" in text
+    assert "candydate_pass_d_watchdog.sh" in text
 
 
 def test_political_wiki_skill_present() -> None:
