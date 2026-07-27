@@ -1,0 +1,115 @@
+# Candydate script-only CronJobs → kubectl exec into cursor-agent-seewin.
+# LLM jobs stay in agents.yaml settings.schedules (CursorBridge tick).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: candydate-pass-ab-launch
+  namespace: leantime
+  labels:
+    app: candydate
+    component: pass-ab-launch
+spec:
+  schedule: "0 12 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: candydate
+            component: pass-ab-launch
+        spec:
+          serviceAccountName: cursorbridge-flush
+          restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: ghcr-pull
+          containers:
+            - name: run
+              image: ghcr.io/yoosungung/cursor-agent-runner:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  kubectl -n leantime exec statefulset/cursor-agent-seewin -c agent-runner -- \
+                    bash /cursor-home/.cursor/skills/candydate-cron/scripts/candydate_pass_ab_launcher.sh
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: candydate-pass-ab-monitor
+  namespace: leantime
+  labels:
+    app: candydate
+    component: pass-ab-monitor
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: candydate
+            component: pass-ab-monitor
+        spec:
+          serviceAccountName: cursorbridge-flush
+          restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: ghcr-pull
+          containers:
+            - name: run
+              image: ghcr.io/yoosungung/cursor-agent-runner:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  kubectl -n leantime exec statefulset/cursor-agent-seewin -c agent-runner -- \
+                    bash /cursor-home/.cursor/skills/candydate-cron/scripts/candydate_pass_ab_monitor.sh
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: candydate-pass-d
+  namespace: leantime
+  labels:
+    app: candydate
+    component: pass-d
+spec:
+  schedule: "0 15,16,17 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: candydate
+            component: pass-d
+        spec:
+          serviceAccountName: cursorbridge-flush
+          restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: ghcr-pull
+          containers:
+            - name: run
+              image: ghcr.io/yoosungung/cursor-agent-runner:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  kubectl -n leantime exec statefulset/cursor-agent-seewin -c agent-runner -- \
+                    bash /cursor-home/.cursor/skills/candydate-cron/scripts/candydate_pass_d_watchdog.sh
